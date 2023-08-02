@@ -118,7 +118,8 @@ if __name__ == "__main__":
                                  "t5-xxl", "flan-t5-xxl", "llama-7b", "llama-13b"])
     parser.add_argument("--bsz", type=int, default=128, help="TrainingArguments: per_device_train/eval_batch_size")
     parser.add_argument("--epoch", type=int, default=100, help="TrainingArguments: num_train_epochs")
-    parser.add_argument("--fp16", action="store_true", help="Using fp16/8bit precision")
+    parser.add_argument("--fp8", action="store_true", help="Using 8bit precision")
+    parser.add_argument("--fp16", action="store_true", help="Using fp16 precision")
     parser.add_argument("--bf16", action="store_true", help="Using bf16/mixture precision")
     parser.add_argument("--freeze", action="store_true", help="Freeze all params except the last nn.Linear head")
     parser.add_argument("--use_pos_weight", action="store_true", help="Use pos_weight for unbalanced binary-cls data")
@@ -139,6 +140,7 @@ if __name__ == "__main__":
     model_name = str(args.model_name)
     bsz = int(args.bsz)
     epoch = int(args.epoch)
+    fp8 = bool(args.fp8)
     fp16 = bool(args.fp16)
     bf16 = bool(args.bf16)
     freeze = bool(args.freeze)
@@ -161,6 +163,7 @@ if __name__ == "__main__":
         tokenizer = BertTokenizer.from_pretrained(hf_model_id, cache_dir=cache_model)
         model = FinptBertForSequenceClassification.from_pretrained(
             hf_model_id, num_labels=2, cache_dir=cache_model)
+        fp8 = False
         freeze = False
     elif model_name == "finbert":
         model_class = "bert"
@@ -168,63 +171,65 @@ if __name__ == "__main__":
         tokenizer = BertTokenizer.from_pretrained(hf_model_id, cache_dir=cache_model)
         model = FinptBertForSequenceClassification.from_pretrained(
             hf_model_id, num_labels=2, cache_dir=cache_model)
+        fp8 = False
         freeze = False
     elif model_name == "gpt2":
         model_class = "gpt"
         hf_model_id = "gpt2"
         tokenizer = GPT2Tokenizer.from_pretrained(hf_model_id, cache_dir=cache_model)
         model = FinptGPT2ForSequenceClassification.from_pretrained(
-            hf_model_id, cache_dir=cache_model, load_in_8bit=fp16)
+            hf_model_id, cache_dir=cache_model, load_in_8bit=fp8)
         freeze = False
     elif model_name == "t5-base":
         model_class = "t5"
         hf_model_id = "t5-base"
         tokenizer = T5Tokenizer.from_pretrained(hf_model_id, cache_dir=cache_model)
         model = FinptT5ForSequenceClassification.from_pretrained(
-            hf_model_id, cache_dir=cache_model, load_in_8bit=fp16)
+            hf_model_id, cache_dir=cache_model, load_in_8bit=fp8)
         freeze = False
     elif model_name == "flan-t5-base":
         model_class = "t5"
         hf_model_id = "google/flan-t5-base"
         tokenizer = T5Tokenizer.from_pretrained(hf_model_id, cache_dir=cache_model)
         model = FinptT5ForSequenceClassification.from_pretrained(
-            hf_model_id, cache_dir=cache_model, load_in_8bit=fp16)
+            hf_model_id, cache_dir=cache_model, load_in_8bit=fp8)
         freeze = False
     elif model_name == "t5-xxl":
         model_class = "t5"
         hf_model_id = "t5-11b"
         tokenizer = T5Tokenizer.from_pretrained(hf_model_id, cache_dir=cache_model)
         model = FinptT5ForSequenceClassification.from_pretrained(
-            hf_model_id, cache_dir=cache_model, load_in_8bit=fp16)
+            hf_model_id, cache_dir=cache_model, load_in_8bit=fp8)
         freeze = True
     elif model_name == "flan-t5-xxl":
         model_class = "t5"
         hf_model_id = "google/flan-t5-xxl"
         tokenizer = T5Tokenizer.from_pretrained(hf_model_id, cache_dir=cache_model)
         model = FinptT5ForSequenceClassification.from_pretrained(
-            hf_model_id, cache_dir=cache_model, load_in_8bit=fp16)
+            hf_model_id, cache_dir=cache_model, load_in_8bit=fp8)
         freeze = True
     elif model_name == "llama-7b":
         model_class = "llama"
         hf_model_id = "openlm-research/open_llama_7b"
         tokenizer = LlamaTokenizer.from_pretrained(hf_model_id, cache_dir=cache_model)
         model = FinptLlamaForSequenceClassification.from_pretrained(
-            hf_model_id, cache_dir=cache_model, load_in_8bit=fp16)
+            hf_model_id, cache_dir=cache_model, load_in_8bit=fp8)
         freeze = True
     elif model_name == "llama-13b":
         model_class = "llama"
         hf_model_id = "openlm-research/open_llama_13b"
         tokenizer = LlamaTokenizer.from_pretrained(hf_model_id, cache_dir=cache_model)
         model = FinptLlamaForSequenceClassification.from_pretrained(
-            hf_model_id, cache_dir=cache_model, load_in_8bit=fp16)
+            hf_model_id, cache_dir=cache_model, load_in_8bit=fp8)
         freeze = True
     else:
         raise ValueError(f">>> ValueError: model_name = {model_name}")
 
-    if fp16:
-        model = model.to(device=device, dtype=torch.float16)
-    else:
-        model = model.to(device=device)
+    if not fp8:
+        if fp16:
+            model = model.to(device=device, dtype=torch.float16)
+        else:
+            model = model.to(device=device)
 
     logger.info(f">>> tokenizer.all_special_tokens (before): {tokenizer.all_special_tokens}")
     if model_class == "bert" and tokenizer.eos_token is None:
