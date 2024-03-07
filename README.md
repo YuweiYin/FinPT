@@ -1,9 +1,9 @@
 # FinPT: Financial Risk Prediction with Profile Tuning on Pretrained Foundation Models
 
-![picture](https://yuweiyin.com/files/img/2023-07-22-FinPT.png)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![arXiv](https://img.shields.io/badge/arXiv-2308.00065-b31b1b.svg)](https://arxiv.org/abs/2308.00065)
 
-* **Paper**:
-  * arXiv: https://arxiv.org/abs/2308.00065
+![picture](https://yuweiyin.com/files/img/2023-07-22-FinPT.png)
 
 * **Abstract**:
 
@@ -121,13 +121,12 @@ Please refer to the [LICENSE](./LICENSE) file for more details.
 
 ## Citation
 
-* arXiv: https://arxiv.org/abs/2308.00065
-
 ```bibtex
 @article{yin2023finpt,
   title   = {FinPT: Financial Risk Prediction with Profile Tuning on Pretrained Foundation Models},
   author  = {Yin, Yuwei and Yang, Yazheng and Yang, Jian and Liu, Qi},
   journal = {arXiv preprint arXiv:2308.00065},
   year    = {2023},
+  url     = {https://arxiv.org/abs/2308.00065},
 }
 ```
